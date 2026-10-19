@@ -17,11 +17,12 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 
+// Admin route aliases (for frontend compatibility)
+app.use('/api/admin/users', require('./routes/userRoutes'));
+app.use('/api/admin/products', require('./routes/productRoutes'));
+app.use('/api/admin/orders', require('./routes/orderRoutes'));
+
 app.use(notFound);
 app.use(errorHandler);
 
 module.exports = app;
-
-app.use('/api/admin/users', require('./routes/userRoutes'));
-app.use('/api/admin/products', require('./routes/productRoutes'));
-app.use('/api/admin/orders', require('./routes/orderRoutes'));
