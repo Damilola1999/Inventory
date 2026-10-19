@@ -24,6 +24,13 @@ exports.createOrder = asyncHandler(async (req, res) => {
   if (!Array.isArray(items) || items.length === 0) throw new AppError('items must be a non-empty array');
   if (!shippingAddress?.line1 || !shippingAddress?.city) throw new AppError('shippingAddress.line1 and city are required');
 
+  // Idempotency: a retried request (e.g. after a dropped connection) must not create a second order
+  const idempotencyKey = req.get('Idempotency-Key');
+  if (idempotencyKey) {
+    const existing = await Order.findOne({ idempotencyKey });
+    if (existing) return res.status(200).json({ success: true, order: existing, replayed: true });
+  }
+
   // Merge duplicate product lines
   const merged = new Map();
   for (const { productId, quantity } of items) {
@@ -57,11 +64,17 @@ exports.createOrder = asyncHandler(async (req, res) => {
       items: orderItems,
       totalAmount,
       shippingAddress,
+      ...(idempotencyKey ? { idempotencyKey } : {}),
       statusHistory: [{ status: 'pending', changedBy: req.user._id, note: 'Order placed' }],
     });
 
     res.status(201).json({ success: true, order });
   } catch (err) {
+    if (err?.code === 11000 && idempotencyKey) {
+      // Concurrent retry won the race -> return the order it created
+      const existing = await Order.findOne({ idempotencyKey });
+      if (existing) return res.status(200).json({ success: true, order: existing, replayed: true });
+    }
     await restock(reserved); // roll back any stock already reserved
     throw err;
   }

@@ -26,6 +26,7 @@ const orderSchema = new mongoose.Schema(
       country: { type: String, default: 'NG' },
     },
     status: { type: String, enum: STATUSES, default: 'pending', index: true },
+    idempotencyKey: { type: String, unique: true, sparse: true, index: true },
     statusHistory: [
       {
         status: String,
