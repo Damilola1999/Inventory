@@ -21,3 +21,8 @@ app.use(notFound);
 app.use(errorHandler);
 
 module.exports = app;
+
+// Admin route aliases (for frontend compatibility)
+app.use('/api/admin/users', require('./routes/userRoutes'));
+app.use('/api/admin/products', require('./routes/productRoutes'));
+app.use('/api/admin/orders', require('./routes/orderRoutes'));
